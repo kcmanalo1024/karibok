@@ -64,8 +64,11 @@ export function AuthScreen({ sessionError, onRetry }) {
           <button type="button" aria-pressed={mode === 'login'} disabled={busy} onClick={() => { setMode('login'); setFeedback(null); }}>Login</button>
           <button type="button" aria-pressed={mode === 'signup'} disabled={busy} onClick={() => { setMode('signup'); setFeedback(null); }}>Sign Up</button>
         </div>
-        {!supabase && <p className="auth-feedback" role="status">Sign-in is not available yet. Please try again once account services are connected.</p>}
-        {sessionError && <div className="auth-feedback" role="alert"><p>{sessionError}</p><button className="text-btn" onClick={onRetry}>Retry session check</button></div>}
+{!supabase && (
+  <p className="auth-feedback" role="status">
+    Supabase is not connected in this build.
+  </p>
+)}        {sessionError && <div className="auth-feedback" role="alert"><p>{sessionError}</p><button className="text-btn" onClick={onRetry}>Retry session check</button></div>}
         <form onSubmit={submit} aria-busy={busy}>
           <label className="field" htmlFor="auth-email">Email</label>
           <input id="auth-email" type="email" autoComplete="email" required value={email} onChange={event => setEmail(event.target.value)} placeholder="you@example.com" disabled={busy || !supabase} />
