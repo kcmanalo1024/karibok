@@ -1,0 +1,14 @@
+.topbar .header-profile { display:flex; align-items:center; gap:16px; min-width:0; }
+.topbar .search { min-width:0; flex-shrink:1; }
+.topbar .search input { min-width:0; }
+.topbar .header-profile .user-pill { min-width:0; }
+.topbar .header-profile .user-pill > span:last-child:not(.avatar) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; }
+.topbar .header-profile .avatar { flex-shrink:0; }
+.live-clock { display:flex; flex-direction:column; text-align:right; flex-shrink:0; color:var(--text); line-height:1.4; }
+.live-clock-time { font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.live-clock-zone { font-size:10px; color:var(--muted); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media(max-width:600px) {
+  .topbar .header-profile { gap:8px; flex-shrink:0; }
+  .live-clock-time { font-size:11px; }
+  .live-clock-zone { display:none; }
+}
