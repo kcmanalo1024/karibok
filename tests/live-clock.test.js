@@ -15,12 +15,12 @@ test('clock renders time, zone and an accessible current-time label', t => {
   assert.ok(html.includes('aria-live="off"'));
 });
 
-test('clock formats hours, minutes, seconds and AM/PM using browser default zone', () => {
+test('clock formats hours, minutes, seconds and AM/PM using an IANA time zone', () => {
   for (const date of [new Date(2026,8,15,22,42,18), new Date(2026,8,15,0,0,0), new Date(2026,8,15,12,0,1)]) {
-    assert.equal(formatClock(date).time, new Intl.DateTimeFormat('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(date));
+    assert.equal(formatClock(date, 'Asia/Manila').time, new Intl.DateTimeFormat('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true,timeZone:'Asia/Manila'}).format(date));
   }
-  assert.equal(formatClock(new Date(2026,8,15,22,42,18)).time, '10:42:18 PM');
-  assert.equal(formatClock(new Date(2026,8,15,0,0,0)).time, '12:00:00 AM');
+  assert.equal(formatClock(new Date('2026-09-15T14:42:18Z'), 'Asia/Manila').time, '10:42:18 PM');
+  assert.equal(formatClock(new Date('2026-09-15T16:00:00Z'), 'Asia/Manila').time, '12:00:00 AM');
 });
 
 test('seconds update from Date and resume accurately after inactive time; cleanup removes listeners', t => {

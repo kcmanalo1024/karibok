@@ -1,11 +1,12 @@
 import {createElement, useEffect, useState} from 'react';
+import {resolveTimeZone, timeZoneLabel} from './timeZones.js';
 
-export function formatClock(date = new Date()) {
+export function formatClock(date = new Date(), preferredTimeZone = '') {
+  const timeZone = resolveTimeZone(preferredTimeZone);
   const formatter = new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone,
   });
-  const timeZone = formatter.resolvedOptions().timeZone;
-  return {time: formatter.format(date), label: timeZone === 'Asia/Manila' ? 'Philippines' : timeZone.replaceAll('_', ' ')};
+  return {time: formatter.format(date), label: timeZoneLabel(timeZone), timeZone};
 }
 
 export function subscribeClock(onTick, doc = document, win = window) {
@@ -24,10 +25,10 @@ export function subscribeClock(onTick, doc = document, win = window) {
   };
 }
 
-export default function LiveClock() {
+export default function LiveClock({timeZone = ''}) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => subscribeClock(setNow), []);
-  const {time, label} = formatClock(now);
+  const {time, label} = formatClock(now, timeZone);
   // Keep the accessible name current without announcing every second.
   return createElement('div', {className: 'live-clock', role: 'timer', 'aria-live': 'off', 'aria-label': `Current time: ${time}, ${label}`},
     createElement('time', {dateTime: now.toISOString(), className: 'live-clock-time'}, time),

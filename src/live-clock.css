@@ -7,6 +7,12 @@
 .live-clock { display:flex; flex-direction:column; text-align:right; flex-shrink:0; color:var(--text); line-height:1.4; }
 .live-clock-time { font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .live-clock-zone { font-size:10px; color:var(--muted); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.time-zone-panel .eyebrow { margin-bottom:5px; }
+.time-zone-panel > .muted { font-size:13px; line-height:1.6; margin:6px 0 22px; }
+.time-zone-panel .field { margin-top:17px; }
+.time-zone-panel input, .time-zone-panel select { width:100%; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:11px 12px; font-size:13px; }
+.time-zone-current { margin:18px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+.time-zone-current strong { color:var(--text); }
 @media(max-width:600px) {
   .topbar .header-profile { gap:8px; flex-shrink:0; }
   .live-clock-time { font-size:11px; }
