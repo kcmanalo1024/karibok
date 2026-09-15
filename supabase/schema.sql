@@ -26,13 +26,13 @@ begin
  foreach collection in array array['clients','projects','tasks','payments','sessions','categories'] loop
   if jsonb_typeof(doc->collection) is distinct from 'array' then raise exception 'Missing workspace collection: %',collection using errcode='23514'; end if;
  end loop;
- foreach collection in array array['accounts','transactions'] loop
+ foreach collection in array array['accounts','transactions','utang'] loop
   if doc ? collection and jsonb_typeof(doc->collection) is distinct from 'array' then raise exception 'Invalid %',collection using errcode='23514'; end if;
   if tg_op='UPDATE' and not (doc ? collection) and jsonb_array_length(coalesce(old.data->collection,'[]'))>0 then
    raise exception 'Upgrade this client before saving finance data' using errcode='23514';
   end if;
  end loop;
- foreach collection in array array['clients','projects','tasks','payments','accounts','transactions'] loop
+ foreach collection in array array['clients','projects','tasks','payments','accounts','transactions','utang'] loop
   for item in select * from jsonb_array_elements(coalesce(doc->collection,'[]')) loop
    if jsonb_typeof(item) is distinct from 'object' or jsonb_typeof(item->'id') is distinct from 'string' or btrim(coalesce(item->>'id',''))='' then raise exception 'Invalid record in %',collection using errcode='23514'; end if;
   end loop;
@@ -75,7 +75,7 @@ begin
   if jsonb_typeof(item->'amountCents') is distinct from 'number' or item->>'amountCents' !~ '^[0-9]+$' then raise exception 'Amount must be integer centavos' using errcode='23514'; end if;
   cents:=(item->>'amountCents')::numeric;
   if cents<=0 or cents>99999999999 then raise exception 'Amount out of range' using errcode='23514'; end if;
-  if not exists(select 1 from jsonb_array_elements(coalesce(doc->'accounts','[]')) a where a->>'id'=item->>'accountId') then raise exception 'Transaction references missing account' using errcode='23503'; end if;
+  if not coalesce((item->>'type'='expense' and item->>'paymentMethod'='COD' and item->'paymentRecorded'='false'::jsonb),false) and not exists(select 1 from jsonb_array_elements(coalesce(doc->'accounts','[]')) a where a->>'id'=item->>'accountId') then raise exception 'Transaction references missing account' using errcode='23503'; end if;
   value:=coalesce(item->>'date','');
   if value !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' or (value::date)::text<>value then raise exception 'Invalid transaction date' using errcode='23514'; end if;
   if item->>'type'='transfer' then
@@ -109,4 +109,50 @@ begin
 end $$;
 revoke all on function public.save_workspace(bigint,jsonb) from public, anon;
 grant execute on function public.save_workspace(bigint,jsonb) to authenticated;
+
+
+create or replace function public.check_karibok_finance_extensions()
+returns trigger language plpgsql security invoker set search_path=public as $$
+declare d jsonb; p jsonb; a jsonb; total numeric; val text;
+begin
+ for a in select * from jsonb_array_elements(coalesce(new.data->'accounts','[]')) loop
+  if a ? 'color' and (jsonb_typeof(a->'color') is distinct from 'string' or a->>'color' !~ '^#[0-9a-fA-F]{6}$') then raise exception 'Invalid account color' using errcode='23514'; end if;
+ end loop;
+ for d in select * from jsonb_array_elements(coalesce(new.data->'transactions','[]')) loop
+  if d->>'type'='expense' and coalesce(d->>'paymentMethod','')<>'' then
+   if d->>'paymentMethod' not in ('Cash','Bank','E-wallet','COD','Online Payment','Other') then raise exception 'Invalid payment method' using errcode='23514'; end if;
+   if d->>'paymentMethod'='Other' and btrim(coalesce(d->>'customPaymentMethod',''))='' then raise exception 'Specify payment method' using errcode='23514'; end if;
+   if d->>'paymentMethod'='COD' then
+    if jsonb_typeof(d->'paymentRecorded') is distinct from 'boolean' then raise exception 'COD payment state required' using errcode='23514'; end if;
+    if d->'paymentRecorded'='false'::jsonb and coalesce(d->>'accountId','')<>'' then raise exception 'Unpaid COD cannot reference account' using errcode='23514'; end if;
+   end if;
+   if d->>'paymentMethod' in ('Cash','Bank','E-wallet') and not exists(select 1 from jsonb_array_elements(new.data->'accounts') x where x->>'id'=d->>'accountId' and x->>'type'=d->>'paymentMethod') then raise exception 'Account does not match payment method' using errcode='23514'; end if;
+  end if;
+ end loop;
+ for d in select * from jsonb_array_elements(coalesce(new.data->'utang','[]')) loop
+  if coalesce(d->>'direction','') not in ('receivable','payable') or btrim(coalesce(d->>'person',''))='' or btrim(coalesce(d->>'reason',''))='' then raise exception 'Invalid Utang details' using errcode='23514'; end if;
+  if jsonb_typeof(d->'amountCents') is distinct from 'number' or d->>'amountCents' !~ '^[0-9]+$' then raise exception 'Invalid Utang amount' using errcode='23514'; end if;
+  if (d->>'amountCents')::numeric<=0 or (d->>'amountCents')::numeric>99999999999 then raise exception 'Invalid Utang amount' using errcode='23514'; end if;
+  val:=coalesce(d->>'date','');if val !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' or (val::date)::text<>val then raise exception 'Invalid Utang date' using errcode='23514'; end if;
+  val:=coalesce(d->>'dueDate','');if val<>'' and (val !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' or (val::date)::text<>val or val<d->>'date') then raise exception 'Invalid due date' using errcode='23514'; end if;
+  if coalesce(d->>'accountId','')<>'' and not exists(select 1 from jsonb_array_elements(new.data->'accounts') x where x->>'id'=d->>'accountId') then raise exception 'Missing lending account' using errcode='23503'; end if;
+  if jsonb_typeof(d->'repayments') is distinct from 'array' then raise exception 'Repayments must be an array' using errcode='23514'; end if;
+  total:=0;
+  for p in select * from jsonb_array_elements(d->'repayments') loop
+   if jsonb_typeof(p->'id') is distinct from 'string' or btrim(p->>'id')='' then raise exception 'Invalid repayment ID' using errcode='23514'; end if;
+   if jsonb_typeof(p->'amountCents') is distinct from 'number' or p->>'amountCents' !~ '^[0-9]+$' then raise exception 'Invalid repayment amount' using errcode='23514'; end if;
+   if (p->>'amountCents')::numeric<=0 then raise exception 'Repayment must be positive' using errcode='23514'; end if;
+   total:=total+(p->>'amountCents')::numeric;
+   val:=coalesce(p->>'date','');if val !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' or (val::date)::text<>val or val<d->>'date' then raise exception 'Invalid repayment date' using errcode='23514'; end if;
+   if not exists(select 1 from jsonb_array_elements(new.data->'accounts') x where x->>'id'=p->>'accountId') then raise exception 'Missing repayment account' using errcode='23503'; end if;
+  end loop;
+  if total>(d->>'amountCents')::numeric then raise exception 'Repayment exceeds remaining Utang' using errcode='23514'; end if;
+  if exists(select 1 from jsonb_array_elements(d->'repayments') x group by x->>'id' having count(*)>1) then raise exception 'Duplicate repayment' using errcode='23514'; end if;
+ end loop;
+ return new;
+end $$;
+revoke all on function public.check_karibok_finance_extensions() from public,anon,authenticated;
+drop trigger if exists validate_finance_extensions on public.workspaces;
+create trigger validate_finance_extensions before insert or update of data on public.workspaces for each row execute function public.check_karibok_finance_extensions();
+
 commit;

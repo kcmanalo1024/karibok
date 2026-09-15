@@ -94,3 +94,15 @@ Existing billed/paid/unpaid records remain under Project payments. They are not 
 Run the updated supabase/schema.sql in the project SQL editor. It reuses public.workspaces and save_workspace; it does not introduce duplicate tables or erase existing snapshots. The migration adds server validation for record IDs, linked references, account amounts and transactions, while retaining owner-only RLS and revision checks. Legacy snapshots without finance accounts are accepted, but a later save cannot silently discard populated account/transaction collections.
 
 After applying it, manually verify your real account can save, reload and sign back in, and that a second real account sees only its own workspace. Test email confirmation using your configured email provider. The browser and local PostgreSQL checks cannot certify those live settings.
+
+### Account colors, payment methods and Utang
+
+Finance has Overview, Accounts, Transactions and Utang tabs; legacy Project payments remain available. Account colors use independent hexadecimal values and never change the workspace accent. Existing accounts without a color use a neutral fallback.
+
+Expense payment methods include Cash, Bank, E-wallet, COD, Online Payment and Other. Cash/Bank/E-wallet require an account of that type. Online Payment and Other select a specific account; Other also requires a description. Unpaid COD can be recorded without an account and does not affect balances or expense totals. Edit it, tick Payment recorded, choose the actual account and payment date to recognize the expense once.
+
+Utang records have nested repayments and an optional original movement account. Choosing an original account decreases it for lending or increases it for borrowing. Leave it unset for historical debts already included in opening balances. Actual repayments always select an account. Status and progress are derived from repayments; Mark as Paid opens a repayment confirmation form for the remaining amount. Neither the original movement nor repayments count as normal income/expense. Deleting a debt or repayment reverses its associated movements. Linked accounts cannot be deleted.
+
+Apply the updated supabase/schema.sql before using these new cloud features. It retains the JSONB workspace and existing RPC/RLS, adds validation for colors, payment methods and nested repayments, and accepts legacy snapshots. No .env.local changes are needed. Check saving and reloading these features with your live Supabase project after applying SQL; automated browser tests mock HTTP authentication, while database tests execute the schema locally in PostgreSQL/PGlite.
+
+Additional browser check: node tests/finance-browser.cjs. pnpm test runs all domain and PostgreSQL tests.

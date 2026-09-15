@@ -8,8 +8,8 @@ export function nextDue(key, repeat) {
  const d=new Date(key+'T12:00:00'); const day=d.getDate(); d.setDate(1);d.setMonth(d.getMonth()+1);d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));return dayKey(d);
 }
 export function normalize(raw) {
- const v={name:'Student',photo:'',theme:'system',accent:'#8b3f2f',tasks:[],categories:['School','Work','Freelance','Personal'],projects:[],clients:[],payments:[],accounts:[],transactions:[],sessions:[],timer:null,notificationsEnabled:false,dismissed:[],...raw};
- for(const k of ['tasks','categories','projects','clients','payments','accounts','transactions','sessions','dismissed']) if(!Array.isArray(v[k]))v[k]=[];
+ const v={name:'Student',photo:'',theme:'system',accent:'#8b3f2f',tasks:[],categories:['School','Work','Freelance','Personal'],projects:[],clients:[],payments:[],accounts:[],transactions:[],utang:[],sessions:[],timer:null,notificationsEnabled:false,dismissed:[],...raw};
+ for(const k of ['tasks','categories','projects','clients','payments','accounts','transactions','utang','sessions','dismissed']) if(!Array.isArray(v[k]))v[k]=[];
  if(!v.categories.length)v.categories=['Personal'];
  v.tasks=v.tasks.map(t=>({...t,project:t.project||'',recurrence:t.recurrence||'none'}));
  if(!raw?.schemaVersion){
@@ -19,7 +19,7 @@ export function normalize(raw) {
  }
  v.clients=v.clients.map(c=>({contactPerson:'',phone:'',type:'',email:'',notes:'',...c}));
  v.projects=v.projects.map(p=>({startDate:'',deadline:'',links:{},...p,status:({'Not started':'Not Started','In progress':'In Progress','On hold':'On Hold'})[p.status]||p.status||'Not Started'}));
- return {...v,schemaVersion:5};
+ return {...v,schemaVersion:6};
 }
 export function saveTask(data, task, now=new Date()) {
  const previous=data.tasks.find(t=>t.id===task.id);

@@ -1,3 +1,4 @@
+import { debtBalanceEffects } from './utang.js';
 export const CLIENT_TYPES = ['Business', 'Individual', 'Agency', 'Other'];
 export const PROJECT_STATUSES = ['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled'];
 export const ACCOUNT_TYPES = ['Bank', 'E-wallet', 'Cash', 'Savings', 'Other'];
@@ -40,6 +41,7 @@ export function validateProject(project, data) {
   for (const value of Object.values(project.links || {})) if (value && !safeURL(value)) throw Error('Project links must start with https:// or http://.');
 }
 export function validateAccount(account) {
+  if (account.color && !/^#[0-9a-f]{6}$/i.test(account.color)) throw Error('Choose a valid account color.');
   if (!account.name?.trim()) throw Error('Enter an account name.');
   if (!ACCOUNT_TYPES.includes(account.type)) throw Error('Choose a valid account type.');
   if (!Number.isSafeInteger(account.startingBalanceCents) || Math.abs(account.startingBalanceCents) > 99999999999) throw Error('Enter a valid starting balance.');
@@ -48,7 +50,14 @@ export function validateTransaction(transaction, data) {
   const t = transaction;
   if (!['expense', 'income', 'transfer'].includes(t.type)) throw Error('Choose a transaction type.');
   if (!Number.isSafeInteger(t.amountCents) || t.amountCents <= 0 || t.amountCents > 99999999999) throw Error('Amount must be greater than zero with at most two decimal places.');
-  if (!data.accounts.some(a => a.id === t.accountId)) throw Error('Select an account.');
+  if (t.type==='expense' && t.paymentMethod) {
+    if (!['Cash','Bank','E-wallet','COD','Online Payment','Other'].includes(t.paymentMethod)) throw Error('Choose a payment method.');
+    if (t.paymentMethod==='COD' && typeof t.paymentRecorded!=='boolean') throw Error('Specify whether COD has been paid.');
+    if (t.paymentMethod==='Other' && !t.customPaymentMethod?.trim()) throw Error('Specify the payment method.');
+    if (t.paymentMethod==='COD' && t.paymentRecorded===false && t.accountId) throw Error('Unpaid COD cannot deduct from an account.');
+    if (['Cash','Bank','E-wallet'].includes(t.paymentMethod) && data.accounts.find(a=>a.id===t.accountId)?.type!==t.paymentMethod) throw Error('Choose an account matching the payment method.');
+  }
+  if (!(t.type==='expense' && t.paymentMethod==='COD' && t.paymentRecorded===false) && !data.accounts.some(a => a.id === t.accountId)) throw Error('Select an account.');
   if (!validDate(t.date)) throw Error('Enter a valid transaction date.');
   if (t.type === 'transfer') {
     if (!data.accounts.some(a => a.id === t.toAccountId)) throw Error('Select a destination account.');
@@ -61,14 +70,16 @@ export function validateTransaction(transaction, data) {
 export function accountBalances(data) {
   const balances = Object.fromEntries(data.accounts.map(a => [a.id, a.startingBalanceCents]));
   for (const t of data.transactions) {
+    if (t.type==='expense' && t.paymentMethod==='COD' && t.paymentRecorded===false) continue;
     if (Object.hasOwn(balances, t.accountId)) balances[t.accountId] += t.type === 'income' ? t.amountCents : -t.amountCents;
     if (t.type === 'transfer' && Object.hasOwn(balances, t.toAccountId)) balances[t.toAccountId] += t.amountCents;
   }
+  debtBalanceEffects(data, balances);
   return balances;
 }
 export function financeSummary(data, month) {
   const balances = accountBalances(data);
-  const monthly = data.transactions.filter(t => t.date.slice(0, 7) === month);
+  const monthly = data.transactions.filter(t => t.date.slice(0, 7) === month && !(t.type==='expense' && t.paymentMethod==='COD' && t.paymentRecorded===false));
   const income = monthly.filter(t => t.type === 'income').reduce((n, t) => n + t.amountCents, 0);
   const expenses = monthly.filter(t => t.type === 'expense').reduce((n, t) => n + t.amountCents, 0);
   const spending = {};
@@ -79,6 +90,7 @@ export function financeSummary(data, month) {
 export function deletionReason(data, kind, id) {
   if (kind === 'clients' && data.projects.some(p => p.clientId === id)) return 'Reassign or delete this client’s projects before deleting the client.';
   if (kind === 'projects' && (data.tasks.some(t => t.projectId === id) || data.payments.some(p => p.projectId === id))) return 'Reassign or delete linked tasks and payment records before deleting the project.';
+  if (kind === 'accounts' && (data.utang||[]).some(d=>d.accountId===id || d.repayments.some(p=>p.accountId===id))) return 'Remove or reassign linked Utang movements before deleting this account.';
   if (kind === 'accounts' && data.transactions.some(t => t.accountId === id || t.toAccountId === id)) return 'Reassign or delete this account’s transactions before deleting the account.';
   return '';
 }
