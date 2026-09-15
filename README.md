@@ -48,13 +48,13 @@ Legacy local data and each account have separate browser caches. New cloud accou
 
 ### Persistence design
 
-PostgreSQL stores one JSONB workspace snapshot per authenticated user, containing profile/preferences, tasks, categories, projects, clients, payments, sessions and timer state. Profile images are embedded data URLs in the same protected snapshot (maximum upload 2 MB); a separate storage bucket is not required. This favors atomic saves of linked records for a personal workspace. It is not a normalized reporting warehouse.
+PostgreSQL stores one JSONB workspace snapshot per authenticated user, containing profile/preferences, tasks, categories, projects, clients, legacy project payments, accounts, transactions, sessions and timer state. Profile images are embedded data URLs in the same protected snapshot (maximum upload 2 MB); a separate storage bucket is not required. This favors atomic saves of linked records for a personal workspace. It is not a normalized reporting warehouse.
 
 The SQL migration enables Row Level Security and restricts each row to its owner. The save function uses an expected revision so concurrent device edits cannot silently overwrite each other. On a conflict, export the local draft and choose **Load cloud version**. The app also saves a recovery copy in browser storage. Saves retry during the polling interval and when the connection returns. This is polling sync, not collaborative real-time editing.
 
 Do not edit active timers on multiple devices simultaneously. Revision conflicts will protect the snapshot, but require choosing which device's changes to keep. Timers use elapsed wall time: an active timer continues while the app is closed; completed countdowns are recorded when the app next opens.
 
-The Supabase integration has not been validated against a live project in this workspace because no project has been connected.
+Live Supabase validation was not performed for this update. The existing environment configuration is preserved. Local PostgreSQL tests validate the migration, constraints, revisions and two-user RLS.
 
 Official references: [password sign-in](https://supabase.com/docs/reference/javascript/auth-signinwithpassword), [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
@@ -73,9 +73,24 @@ Start a dedicated test server on port 5174 with VITE_SUPABASE_URL=https://karibo
 node tests/cloud-browser.cjs
 node tests/browser.cjs
 node tests/edge-cases.cjs
+node tests/v4-browser.cjs
 ```
 
 The authentication suite covers splash/login gating, invalid credentials, confirmation-required and immediate-session signup, returning sessions, delayed/error workspace loading, sync conflicts, logout/reload protection, and mobile layouts. The feature suite signs in through the same gate before exercising the existing workflows. The edge-case suite covers pictures, system theme changes, accent contrast and empty workspaces.
 
-These tests simulate Supabase responses. They do not validate real email delivery, database migrations, or live project permissions.
+Browser tests simulate Supabase HTTP responses. The separate database.test.js suite executes the actual migration in PGlite (PostgreSQL), including owner-only RLS, invalid relationships, ledger validation, revision conflicts and repeat migration. Neither suite validates live email delivery or the deployed project configuration.
 
+
+## V4 freelance and personal finances
+
+Clients now have contact details and project summaries. Open a project to manage its tasks, assign existing tasks, inspect deadlines and reference links, and see completed-task progress. Independent projects and standalone tasks remain supported. Linked clients/projects cannot be deleted until their dependent records are reassigned or removed.
+
+Finances supports Bank, E-wallet, Cash, Savings and Other accounts, plus income, expense and transfer transactions. Amounts are stored as integer centavos; balances are derived from starting balances and the ledger. Editing or deleting a transaction recalculates affected accounts. Transfers affect neither combined balance nor monthly income/expenses. Overview includes monthly totals and category spending; history filters by type and either account involved in a transfer.
+
+Existing billed/paid/unpaid records remain under Project payments. They are not automatically converted into cash income because they have no receiving account. Record actual receipts as income transactions. Account deletion is blocked when transactions reference it.
+
+### Upgrade the existing Supabase project
+
+Run the updated supabase/schema.sql in the project SQL editor. It reuses public.workspaces and save_workspace; it does not introduce duplicate tables or erase existing snapshots. The migration adds server validation for record IDs, linked references, account amounts and transactions, while retaining owner-only RLS and revision checks. Legacy snapshots without finance accounts are accepted, but a later save cannot silently discard populated account/transaction collections.
+
+After applying it, manually verify your real account can save, reload and sign back in, and that a second real account sees only its own workspace. Test email confirmation using your configured email provider. The browser and local PostgreSQL checks cannot certify those live settings.

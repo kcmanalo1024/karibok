@@ -3,11 +3,14 @@ import { createRoot } from 'react-dom/client';
 import { LayoutDashboard, CheckSquare, Settings, Plus, Search, CircleCheck, Circle, Trash2, Pencil, X, Clock3, Layers, TrendingUp, Sun, Moon, Monitor, Upload, Sparkles } from 'lucide-react';
 import './styles.css';
 import './depth.css';
+import './v4.css';
+import {WorkPage} from './WorkPage';
+import {FinancePage} from './FinancePage';
 import {CalendarDays,BarChart3,FolderKanban,Users,WalletCards,Bell,Timer} from 'lucide-react';
 import {useWorkspace} from './useWorkspace';
 import {SplashScreen, AuthScreen, WorkspaceLoading} from './AuthFlow';
 import {saveTask,notices} from './domain';
-import {CalendarPage,FocusPage,AnalyticsPage,NotificationsPage,FreelancePage,AccountPanel,CategoryManager,useTimer} from './features';
+import {CalendarPage,FocusPage,AnalyticsPage,NotificationsPage,AccountPanel,CategoryManager,useTimer} from './features';
 const dateKey = (offset=0) => { const d=new Date(); d.setDate(d.getDate()+offset); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const seed = [
  ['Finish database project','School','Database Management',75,0,'High'],
@@ -58,7 +61,8 @@ function WorkspaceApp({workspace}) {
  page==='Focus'?<FocusPage data={data} update={update} now={now} notify={setMessage}/>:
  page==='Analytics'?<AnalyticsPage data={data}/>:
  page==='Notifications'?<NotificationsPage data={data} update={update} onEdit={edit} notify={setMessage}/>:
- ['Clients','Projects','Finances'].includes(page)?<FreelancePage key={page} page={page} data={data} update={update} notify={setMessage}/>:
+ page==='Finances'?<FinancePage data={data} update={update} notify={setMessage}/>:
+ ['Clients','Projects'].includes(page)?<WorkPage key={page} page={page} data={data} update={update} notify={setMessage} renderTask={row} onAddTask={project=>setEditor({id:crypto.randomUUID(),title:'',category:project.category||data.categories[0],project:project.title,projectId:project.id,recurrence:'none',priority:'Medium',due:project.deadline||'',progress:0})}/>:
  <> {page!=='Settings'?<><section className="hero"><div><div className="eyebrow">{new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}).toUpperCase()}</div><h1>{page==='Dashboard'?<>Ala eh, <span>may gagawin.</span></>:'Your tasks, organized.'}</h1><p>{page==='Dashboard'?'A little progress goes a long way. Make room for what matters.':'School, work, and everything in between.'}</p></div><button className="primary" onClick={()=>edit()}><Plus size={18}/> Add task</button></section>
  {page==='Dashboard'&&<section className="stat-grid">{[['Tasks completed',`${complete}/${data.tasks.length}`,'One step closer',CircleCheck],['Due today',data.tasks.filter(t=>t.due===dateKey()&&t.progress<100).length,'Your next priorities',Clock3],['In progress',data.tasks.filter(t=>t.progress>0&&t.progress<100).length,'Keep the momentum',Layers],['Overall progress',`${average(data.tasks)}%`,'Across all your tasks',TrendingUp]].map(([title,value,note,Icon])=><div className="stat-card" key={title}><div className="stat-icon"><Icon size={19}/></div><div className="stat-title">{title}</div><div className="stat-value">{value}</div><div className="stat-note">{note}</div></div>)}</section>}
  <div className={page==='Dashboard'?'dashboard-grid':'task-page'}><section className="panel tasks-panel"><div className="panel-head"><div><div className="eyebrow">{page==='Dashboard'?'MAKE IT HAPPEN':'YOUR LIST'}</div><h2>What's on your plate?</h2></div><span className="muted text-xs">{tasks.length} tasks</span></div><div className="flex flex-wrap gap-2 mb-4">{['All',...data.categories].map(c=><button key={c} className={`filter ${filter===c?'selected':''}`} onClick={()=>setFilter(c)}>{c}</button>)}</div><div className="task-list">{tasks.length?tasks.map(row):<div className="empty"><CheckSquare size={30}/><h3>A little breathing room.</h3><p>{data.tasks.length?'No tasks match this view. Try another category or search.':'Add your first task to get started.'}</p></div>}</div></section>
