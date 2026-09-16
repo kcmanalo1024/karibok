@@ -1,12 +1,12 @@
 import {UtangPage} from './UtangPage';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, ArrowRight, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, WalletCards } from 'lucide-react';
 import { Heading, Empty, Dialog } from './features';
 import { id, dayKey, income, money } from './domain';
 import { ACCOUNT_TYPES, EXPENSE_CATEGORIES, INCOME_CATEGORIES, parseCents, financeSummary, validateAccount, validateTransaction, deletionReason, upsert } from './v4';
 import { Field, RecordActions, DeleteDialog, centsMoney } from './v4ui';
 
-export function FinancePage({ data, update, notify }) {
+export function FinancePage({ data, update, notify, quickAdd, onQuickAddHandled }) {
   const [tab,setTab]=useState('Overview');
   const [typeFilter,setTypeFilter]=useState('all');
   const [accountFilter,setAccountFilter]=useState('');
@@ -20,6 +20,11 @@ export function FinancePage({ data, update, notify }) {
   const open=(kind,value)=>{setError('');setEditor({kind,value:{...value}});};
   const newAccount=()=>open('accounts',{id:id(),name:'',type:'Bank',startingBalance:'0.00',notes:'',color:'#3b82f6'});
   const newTransaction=()=>open('transactions',{id:id(),type:'expense',description:'',amount:'',accountId:data.accounts[0]?.id||'',toAccountId:'',category:'Food',paymentMethod:'Online Payment',paymentRecorded:true,date:dayKey(),notes:''});
+  useEffect(() => {
+    if (!quickAdd) return;
+    if (quickAdd.kind === 'transaction') { setTab('Transactions'); newTransaction(); onQuickAddHandled?.(); }
+    if (quickAdd.kind === 'utang') { setTab('Utang'); }
+  }, [quickAdd]);
   const editAccount=a=>open('accounts',{...a,startingBalance:(a.startingBalanceCents/100).toFixed(2)});
   const editTransaction=t=>open('transactions',{...t,amount:(t.amountCents/100).toFixed(2)});
   const change=(key,value)=>setEditor(e=>({...e,value:{...e.value,[key]:value}}));
@@ -35,7 +40,7 @@ export function FinancePage({ data, update, notify }) {
   return <>
     <Heading eyebrow="FINANCES · MONEY" title="Every peso, a place." description="Where your money is. What you spend. What you keep." action={<div className="v4-actions"><button className="secondary" onClick={newAccount}><Plus size={16}/> Add account</button><button className="primary" onClick={newTransaction}><Plus size={17}/> Add transaction</button></div>}/>
     <div className="v4-tabs" aria-label="Finance views">{['Overview','Accounts','Transactions','Utang','Project payments'].map(name=><button className={`filter ${tab===name?'selected':''}`} aria-pressed={tab===name} key={name} onClick={()=>setTab(name)}>{name}</button>)}</div>
-    {tab==='Utang'?<UtangPage data={data} update={update}/>:tab==='Project payments'?<ProjectPayments data={data} update={update} notify={notify}/>:<>
+    {tab==='Utang'?<UtangPage data={data} update={update} quickAdd={quickAdd} onQuickAddHandled={onQuickAddHandled}/>:tab==='Project payments'?<ProjectPayments data={data} update={update} notify={notify}/>:<>
       <section className="stat-grid finance-stats">{[['Total Balance',current.total],['Available Cash',current.cash],['Total Savings',current.savings],["This Month’s Income",current.income],["This Month’s Expenses",current.expenses]].map(([label,value])=><div className="stat-card" key={label}><div className="stat-title">{label}</div><div className="stat-value">{centsMoney(value)}</div></div>)}</section>
       {['Overview','Accounts'].includes(tab)?<>
         <div className="v4-section-heading"><h2>Accounts</h2><span className="muted text-xs">Cash and Savings totals follow the account type.</span></div>

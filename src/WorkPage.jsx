@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, ArrowLeft, ArrowUpRight, Users, FolderKanban } from 'lucide-react';
 import { Heading, Empty, Dialog } from './features';
 import { id } from './domain';
 import { CLIENT_TYPES, PROJECT_STATUSES, clientSummary, projectSummary, validateClient, validateProject, safeURL, deletionReason, upsert } from './v4';
 import { Field, Metrics, RecordActions, DeleteDialog } from './v4ui';
 
-export function WorkPage({ page, data, update, notify, onAddTask, renderTask }) {
+export function WorkPage({ page, data, update, notify, onAddTask, renderTask, quickAdd, onQuickAddHandled }) {
   const [view, setView] = useState(null);
   const [editor, setEditor] = useState(null);
   const [error, setError] = useState('');
@@ -18,6 +18,11 @@ export function WorkPage({ page, data, update, notify, onAddTask, renderTask }) 
   const openEditor = (kind, value) => { setError(''); setEditor({ kind, value: { ...value } }); };
   const newClient = () => openEditor('clients', { id: id(), name: '', contactPerson: '', email: '', phone: '', type: '', notes: '' });
   const newProject = (clientId = '') => openEditor('projects', { id: id(), title: '', clientId, category: data.categories[0], description: '', startDate: '', deadline: '', status: 'Not Started', links: {} });
+  useEffect(() => {
+    if (!quickAdd) return;
+    if (quickAdd.kind === 'client' && isClients) { newClient(); onQuickAddHandled?.(); }
+    if (quickAdd.kind === 'project' && !isClients) { newProject(); onQuickAddHandled?.(); }
+  }, [quickAdd, isClients]);
   const openProject = p => { setView({ kind: 'project', id: p.id, clientId: client?.id || view?.clientId }); setAssigning(false); };
   const requestDelete = (kind, record) => { const reason = deletionReason(data, kind, record.id); if (reason) return notify(reason); setDeleting({ kind, record }); };
   const change = (key, value) => setEditor(e => ({ ...e, value: { ...e.value, [key]: value } }));

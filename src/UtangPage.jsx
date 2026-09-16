@@ -1,13 +1,14 @@
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
 import {Dialog,Empty} from './features';
 import {Field,RecordActions,DeleteDialog,Metrics,centsMoney} from './v4ui';
 import {id,dayKey} from './domain';
 import {parseCents,upsert} from './v4';
 import {debtStatus,debtSummary,validateDebt} from './utang';
-export function UtangPage({data,update}){
+export function UtangPage({data,update,quickAdd,onQuickAddHandled}){
  const [edit,setEdit]=useState(null),[payment,setPayment]=useState(null),[remove,setRemove]=useState(null),[error,setError]=useState('');
  const summary=debtSummary(data,dayKey());const change=(k,v)=>setEdit(e=>({...e,[k]:v}));
  const open=d=>{setError('');setEdit({...d,amount:(d.amountCents/100).toFixed(2)});};
+ useEffect(()=>{if(quickAdd?.kind==='utang'){open({id:id(),direction:'receivable',person:'',amountCents:0,date:dayKey(),dueDate:'',reason:'',notes:'',accountId:'',repayments:[]});onQuickAddHandled?.();}},[quickAdd]);
  const pay=(d,full=false)=>{setError('');setPayment({debtId:d.id,id:id(),amount:full?(debtStatus(d).remaining/100).toFixed(2):'',accountId:data.accounts[0]?.id||'',date:dayKey(),full});};
  const options=[{value:'',label:'Choose account'},...data.accounts.map(a=>({value:a.id,label:a.name}))];
  return <><div className="panel-head"><div><h2>Utang</h2><p className="muted text-sm">Keep money owed separate from everyday spending.</p></div><button className="primary" onClick={()=>open({id:id(),direction:'receivable',person:'',amountCents:0,date:dayKey(),dueDate:'',reason:'',notes:'',accountId:'',repayments:[]})}>Add Utang</button></div>
