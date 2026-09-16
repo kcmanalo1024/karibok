@@ -28,6 +28,9 @@ const defaults={tasks:seed,categories:['School','Work','Freelance','Personal'],n
 function useAppearance(data) {
  useEffect(()=>{const media=matchMedia('(prefers-color-scheme: dark)'); const apply=()=>{document.documentElement.dataset.theme=data.theme==='system'?(media.matches?'dark':'light'):data.theme;};apply();media.addEventListener('change',apply);document.documentElement.style.setProperty('--accent',data.accent);const rgb=data.accent.slice(1).match(/../g)?.map(x=>parseInt(x,16))||[139,63,47];const lum=rgb.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);document.documentElement.style.setProperty('--on-accent',lum>.179?'#171717':'#ffffff');return()=>media.removeEventListener('change',apply);},[data.theme,data.accent]);
 }
+function useSidebarCollapse() {
+ useEffect(()=>{const sidebar=document.querySelector('.sidebar'),main=document.querySelector('.main');if(!sidebar||!main)return;const button=document.createElement('button');button.className='sidebar-collapse';button.type='button';button.setAttribute('aria-label','Collapse sidebar');button.setAttribute('aria-expanded','true');button.textContent='‹';const reopen=document.createElement('button');reopen.className='sidebar-reopen';reopen.type='button';reopen.setAttribute('aria-label','Open sidebar');reopen.textContent='›';reopen.hidden=true;sidebar.append(button);main.append(reopen);const toggle=()=>{const collapsed=sidebar.classList.toggle('is-collapsed');main.classList.toggle('sidebar-is-collapsed',collapsed);button.textContent=collapsed?'›':'‹';button.setAttribute('aria-label',collapsed?'Expand sidebar':'Collapse sidebar');button.setAttribute('aria-expanded',String(!collapsed));reopen.hidden=!collapsed;};button.addEventListener('click',toggle);reopen.addEventListener('click',toggle);return()=>{button.removeEventListener('click',toggle);reopen.removeEventListener('click',toggle);button.remove();reopen.remove();};},[]);
+}
 function App() {
  const workspace = useWorkspace(defaults);
  const [splash, setSplash] = useState(true);
@@ -47,6 +50,7 @@ function WorkspaceApp({workspace}) {
  const [page,setPage]=useState('Dashboard'),[query,setQuery]=useState(''),[filter,setFilter]=useState('All'),[editor,setEditor]=useState(null),[message,setMessage]=useState(''),[quickAdd,setQuickAdd]=useState(null),[noteEditor,setNoteEditor]=useState(null);
 
  const now=useTimer(data,update,setMessage);
+ useSidebarCollapse();
  useEffect(()=>{window.scrollTo({top:0});},[page]);
  useEffect(()=>{if(!data.categories.includes(filter)&&filter!=='All')setFilter('All');},[data.categories,filter]);
  useEffect(()=>{if(!data.notificationsEnabled||!('Notification' in window)||Notification.permission!=='granted')return;for(const notice of notices(data)){const key='karibok-notified-'+(workspace.user?.id||'guest')+'-'+notice.id;try{if(!localStorage.getItem(key)){new Notification(notice.title,{body:notice.detail});localStorage.setItem(key,'1');}}catch{}}},[data.tasks,data.sessions,data.notificationsEnabled,dateKey()]);
