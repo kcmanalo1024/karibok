@@ -21,9 +21,30 @@ export function normalize(raw) {
  v.projects=v.projects.map(p=>({startDate:'',deadline:'',links:{},...p,status:({'Not started':'Not Started','In progress':'In Progress','On hold':'On Hold'})[p.status]||p.status||'Not Started'}));
  return {...v,schemaVersion:6};
 }
+
+export function normalizeSubtasks(subtasks) {
+  if (!Array.isArray(subtasks)) return [];
+  return subtasks
+    .map((subtask, index) => ({
+      ...subtask,
+      id: subtask?.id || `subtask-${index}-${Date.now()}`,
+      title: String(subtask?.title || '').trim(),
+      completed: Boolean(subtask?.completed),
+      order: index,
+    }))
+    .filter(subtask => subtask.title);
+}
+
+export function subtasksProgress(subtasks) {
+  const list = normalizeSubtasks(subtasks);
+  return list.length ? Math.round((list.filter(subtask => subtask.completed).length / list.length) * 100) : null;
+}
 export function saveTask(data, task, now=new Date()) {
  const previous=data.tasks.find(t=>t.id===task.id);
- let saved={...task,title:task.title.trim(),completedAt:task.progress===100?(previous?.completedAt||now.toISOString()):null};
+ const subtasks = normalizeSubtasks(task.subtasks);
+ const progress = subtasks.length ? subtasksProgress(subtasks) : task.progress;
+ let saved={...task,title:task.title.trim(),progress,completedAt:progress===100?(previous?.completedAt||now.toISOString()):null};
+ if(Array.isArray(task.subtasks)) saved.subtasks=subtasks;
  let tasks=previous?data.tasks.map(t=>t.id===saved.id?saved:t):[...data.tasks,saved];
  if(saved.progress===100&&previous?.progress!==100&&saved.recurrence!=='none'&&saved.due&&!saved.nextOccurrenceId){
   const child={...saved,id:id(),progress:0,previousProgress:0,completedAt:null,due:nextDue(saved.due,saved.recurrence),nextOccurrenceId:null};
