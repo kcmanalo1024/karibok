@@ -33,6 +33,17 @@ export function resolveTimeZone(savedTimeZone) {
   return isValidTimeZone(savedTimeZone) ? savedTimeZone : detectedTimeZone();
 }
 
+export function hourInTimeZone(date = new Date(), preferredTimeZone = '') {
+  const timeZone = resolveTimeZone(preferredTimeZone);
+  return Number(new Intl.DateTimeFormat('en-US', {hour:'2-digit', hourCycle:'h23', timeZone}).format(date));
+}
+
+export function dashboardGreeting(date = new Date(), preferredTimeZone = '', name = '') {
+  const hour = hourInTimeZone(date, preferredTimeZone);
+  const period = hour >= 5 && hour < 12 ? 'Morning' : hour >= 12 && hour < 18 ? 'Afternoon' : hour >= 18 && hour < 22 ? 'Evening' : 'Night';
+  return `Good ${period}, ${name?.trim() || 'there'}`;
+}
+
 export function timeZoneLabel(timeZone) {
   const location = TIME_ZONES.find(item => item.timeZone === timeZone);
   return location?.country || timeZone.split('/').at(-1).replaceAll('_', ' ');
