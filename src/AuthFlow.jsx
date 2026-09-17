@@ -7,7 +7,7 @@ const tagline = "Your Life Gets Chaotic. Your Tasks Don't Have To Be.";
 export function SplashScreen() {
   return <main className="splash-screen" aria-label="KARIBOK is opening">
     <div className="splash-content">
-      <img src={whiteLogo} alt="KARIBOK" className="splash-logo" />
+      <img src="/White_Logo.png" alt="KARIBOK" className="splash-logo" />
       <p>{tagline}</p>
       <div className="splash-loader" role="status" aria-label="Loading KARIBOK"><span /></div>
     </div>
@@ -47,7 +47,7 @@ export function AuthScreen({ sessionError, onRetry }) {
 
   return <main className="auth-screen">
     <section className="auth-brand-panel" aria-label="Welcome to KARIBOK">
-      <img src="dist/White_Logo.png" alt="KARIBOK" className="auth-logo" />
+      <img src="/White_Logo.png" alt="KARIBOK" className="auth-logo" />
       <div className="auth-brand-copy">
         <div className="eyebrow">STUDY · WORK · HUSTLE</div>
         <h1>{tagline}</h1>
@@ -89,7 +89,7 @@ export function WorkspaceLoading({ workspace }) {
   const [error, setError] = useState('');
   const failed = workspace.status.startsWith('Could not');
   return <main className="workspace-loading">
-    <img className="splash-logo" src="dist/White_Logo.png" alt="KARIBOK" />
+    <img className="splash-logo" src="/White_Logo.png" alt="KARIBOK" />
     <h1>{workspace.user ? 'Opening your workspace…' : 'Checking your session…'}</h1>
     <p role="status">{workspace.status}</p>
     {!failed && <LoaderCircle className="loading-spin" size={22} aria-hidden="true" />}
@@ -98,5 +98,5 @@ export function WorkspaceLoading({ workspace }) {
   </main>;
 }
 
-import whiteLogo from '../dist/White_Logo.png';
+
 
