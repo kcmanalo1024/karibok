@@ -9,7 +9,7 @@ export function nextDue(key, repeat) {
  const d=new Date(key+'T12:00:00'); const day=d.getDate(); d.setDate(1);d.setMonth(d.getMonth()+1);d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));return dayKey(d);
 }
 export function normalize(raw) {
- const v={name:'Student',photo:'',theme:'system',accent:'#8b3f2f',timeZone:'',tasks:[],categories:['School','Work','Freelance','Personal'],projects:[],clients:[],payments:[],accounts:[],transactions:[],utang:[],sessions:[],notes:[],timer:null,notificationsEnabled:false,dismissed:[],...raw};
+ const v={name:'Student',photo:'',theme:'dark',accent:'#8b3f2f',timeZone:'',tasks:[],categories:['School','Work','Freelance','Personal'],projects:[],clients:[],payments:[],accounts:[],transactions:[],utang:[],sessions:[],notes:[],timer:null,notificationsEnabled:false,dismissed:[],...raw};
  for(const k of ['tasks','categories','projects','clients','payments','accounts','transactions','utang','sessions','notes','dismissed']) if(!Array.isArray(v[k]))v[k]=[];
  if(!v.categories.length)v.categories=['Personal'];
  v.tasks=v.tasks.map(t=>({...t,recurrence:t.recurrence||'none'}));
