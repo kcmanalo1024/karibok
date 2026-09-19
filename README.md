@@ -112,7 +112,7 @@ Additional browser check: node tests/finance-browser.cjs. pnpm test runs all dom
 
 Projects have been replaced by folders. On the first authenticated load, existing project IDs become folder IDs, their metadata is retained, and linked tasks/notes/payments retain their IDs. The associated client becomes a direct `clientId`. This idempotent upgrade saves through the existing revision-checked `save_workspace` RPC. No task or note copies are created.
 
-The sidebar now contains Workspace (Dashboard, Tasks, Notes, Calendar), Organize (Folders, Favorites, Clients), Productivity (Focus), and bottom Trash/Settings. Existing finance features remain reachable from Settings and Quick Add; project payments are now client payments.
+The sidebar now contains Workspace (Dashboard, Tasks, Notes, Calendar), Organize (Folders, Favorites, Clients, Finances), Productivity (Focus), and bottom Trash/Settings. Existing finance features are directly available under Organize and through Quick Add; project payments are now client payments.
 
 Folders allow one child level. Archive and favorite are independent flags. Tasks and notes can have a folder and a client, or neither. Trash uses `deletedAt` and a deletion-group identifier on the original records, with no automatic expiry. Restoring a folder restores records deleted with it; previously deleted contents stay in Trash. Restoring an individual item also restores its required folder ancestors. Permanent folder deletion deletes its descendants; permanent client deletion unlinks surviving tasks, notes, and payments.
 
