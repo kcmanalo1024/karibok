@@ -1,0 +1,40 @@
+/* One Lucide outline language, with optical sizes based on the control's role. */
+.lucide {
+  width:18px;
+  height:18px;
+  flex-shrink:0;
+  stroke-width:1.75;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  vertical-align:middle;
+}
+.lucide>* {vector-effect:non-scaling-stroke}
+.icon-label {display:inline-flex;align-items:center;gap:8px}
+.icon-btn .lucide,.header-profile .lucide,.theme-option .lucide,.check .lucide {width:20px;height:20px}
+.more .lucide,.text-btn .lucide,.account-type .lucide,.agenda-row .lucide,.toast .lucide {width:16px;height:16px}
+.sidebar-collapse .lucide {width:16px;height:16px}
+.quick-add-trigger .lucide {width:22px;height:22px}
+.empty .lucide {width:30px;height:30px;color:var(--muted)}
+.loading-spin.lucide {width:28px;height:28px}
+.file-sidebar .nav-item .lucide {width:18px;height:18px}
+.primary:has(>.lucide),.secondary:has(>.lucide),.text-btn:has(>.lucide),.quick-add-menu button {
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+}
+.secondary>.lucide {margin:0}
+.quick-add-menu button {justify-content:flex-start;gap:10px}
+.quick-add-menu .lucide {color:var(--muted)}
+.title-link {align-items:center;gap:8px}
+.title-link .lucide,.panel-head>.lucide,.account-card .account-type .lucide {color:var(--muted)}
+.stat-icon,.ledger-icon {background:var(--surface2);color:var(--muted);box-shadow:inset 0 1px 0 var(--edge-light)}
+.stat-icon .lucide,.ledger-icon .lucide {width:18px;height:18px}
+.theme-option:not(.selected) .lucide,.icon-btn .lucide {color:var(--muted)}
+.check {color:var(--muted)}
+.task-row.done .check,.secondary[aria-pressed=true] .lucide,.theme-option.selected .lucide,
+.file-sidebar .nav-item.active .lucide,.file-sidebar .nav-item[aria-current=page] .lucide {color:var(--accent-ink)}
+.primary .lucide,.quick-add-trigger .lucide {color:var(--on-accent)}
+.more {min-width:26px;min-height:26px;border-radius:6px}
+@media(hover:hover) {
+  .more:hover {background:var(--surface2)}
+  .more:hover .lucide,.icon-btn:hover .lucide,.text-btn:hover .lucide,.title-link:hover .lucide,
+  .quick-add-menu button:hover .lucide {color:var(--accent-ink)}
+}
