@@ -15,12 +15,12 @@ test('SQL migration, ledger constraints, atomic revision checks and two-user RLS
   await asUser(db,USER_B,'select public.save_workspace($1,$2::jsonb)',[0,JSON.stringify(normalize({}))]);
   assert.equal((await asUser(db,USER_B,'select * from public.workspaces')).rows.length,1);
   for(const mutate of [
-    d=>d.projects[0].clientId='other-users-client',
-    d=>d.tasks[0].projectId='missing',
+    d=>d.tasks[0].clientId='other-users-client',
+    d=>d.tasks[0].folderId='missing',
     d=>d.clients=[],
     d=>d.accounts.push({...d.accounts[0]}),
     d=>d.accounts[0].startingBalanceCents=1.5,
-    d=>d.projects[0].links={other:'javascript:alert(1)'},
+    d=>d.folders[0].parentId=d.folders[0].id,
     d=>d.transactions.push({id:'bad',type:'transfer',amountCents:20000,accountId:'bank',toAccountId:'bank',date:'2026-09-15'}),
     d=>d.transactions.push({id:'bad',type:'transfer',amountCents:20000,accountId:'bank',toAccountId:'foreign-account',date:'2026-09-15'}),
     d=>d.transactions.push({id:'bad',type:'expense',amountCents:-1,accountId:'bank',description:'Food',category:'Food',date:'2026-09-15'}),

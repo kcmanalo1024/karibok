@@ -22,7 +22,7 @@ export function useWorkspace(fallback){
   let cache;try{cache=JSON.parse(localStorage.getItem(`karibok-user-${r.user.id}`));}catch{}
   r.revision=row?.revision||0;
   if(cache?.dirty){setCurrent(cache.data);r.dirty=true;r.revision=cache.revision||0;if(r.revision!==(row?.revision||0)){r.conflict=true;setConflict(true);setStatus('Another device changed this workspace. Export your draft, then load the cloud version.');}else setStatus('Restored unsynced changes');}
-  else {setCurrent(row?.data||normalize({name:session.user.user_metadata?.display_name||'Student'}));setStatus('Synced');}
+  else {setCurrent(row?.data||normalize({name:session.user.user_metadata?.display_name||'Student'}));r.dirty=!!row&&row.data.organizationVersion!==1;setStatus(r.dirty?'Saving workspace upgrade…':'Synced');}
   r.ready=true;setReady(true);persist();
   } catch(error) { if(generation===r.generation)setStatus(`Could not load cloud data: ${error.message}`); }
  };

@@ -3,9 +3,9 @@ const assert=require('node:assert/strict');
 const {mockCloud,signIn}=require('./mock-cloud.cjs');
 (async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});try{
  const page=await browser.newPage({viewport:{width:390,height:844}});const backend=await mockCloud(page);await page.goto(process.env.APP_URL||'http://127.0.0.1:5174');await signIn(page);const add=page.getByRole('button',{name:'Quick Add'});
- await add.click();const menu=page.getByRole('menu');assert.deepEqual(await menu.getByRole('menuitem').allTextContents(),['Task','Project','Client','Transaction','Utang','Note']);await page.keyboard.press('Escape');assert.equal(await menu.count(),0);
+ await add.click();const menu=page.getByRole('menu');assert.deepEqual(await menu.getByRole('menuitem').allTextContents(),['Task','Folder','Client','Transaction','Utang','Note']);await page.keyboard.press('Escape');assert.equal(await menu.count(),0);
  await add.click();await page.getByRole('menuitem',{name:'Client'}).click();await page.getByLabel('Client / Business Name').fill('Quick Client');await page.getByRole('button',{name:'Save Client'}).click();await page.getByText('Quick Client',{exact:true}).waitFor();
- await add.click();await page.getByRole('menuitem',{name:'Project'}).click();await page.getByLabel('Project Name').fill('Quick Project');await page.getByRole('button',{name:'Save Project'}).click();await page.getByText('Quick Project',{exact:true}).waitFor();
+ await add.click();await page.getByRole('menuitem',{name:'Folder'}).click();await page.getByLabel('Folder name').fill('Quick Folder');await page.getByRole('button',{name:'Save Folder'}).click();await page.getByText('Quick Folder',{exact:true}).waitFor();
  await add.click();await page.getByRole('menuitem',{name:'Task'}).click();await page.getByLabel('Task title').fill('Quick Task');await page.getByRole('button',{name:'Add task',exact:true}).last().click();await page.getByText('Quick Task',{exact:true}).waitFor();
  await add.click();await page.getByRole('menuitem',{name:'Transaction'}).click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);
  await add.click();await page.getByRole('menuitem',{name:'Utang'}).click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');

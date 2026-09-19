@@ -106,3 +106,20 @@ Utang records have nested repayments and an optional original movement account. 
 Apply the updated supabase/schema.sql before using these new cloud features. It retains the JSONB workspace and existing RPC/RLS, adds validation for colors, payment methods and nested repayments, and accepts legacy snapshots. No .env.local changes are needed. Check saving and reloading these features with your live Supabase project after applying SQL; automated browser tests mock HTTP authentication, while database tests execute the schema locally in PostgreSQL/PGlite.
 
 Additional browser check: node tests/finance-browser.cjs. pnpm test runs all domain and PostgreSQL tests.
+
+
+## Organization update
+
+Projects have been replaced by folders. On the first authenticated load, existing project IDs become folder IDs, their metadata is retained, and linked tasks/notes/payments retain their IDs. The associated client becomes a direct `clientId`. This idempotent upgrade saves through the existing revision-checked `save_workspace` RPC. No task or note copies are created.
+
+The sidebar now contains Workspace (Dashboard, Tasks, Notes, Calendar), Organize (Folders, Favorites, Clients), Productivity (Focus), and bottom Trash/Settings. Existing finance features remain reachable from Settings and Quick Add; project payments are now client payments.
+
+Folders allow one child level. Archive and favorite are independent flags. Tasks and notes can have a folder and a client, or neither. Trash uses `deletedAt` and a deletion-group identifier on the original records, with no automatic expiry. Restoring a folder restores records deleted with it; previously deleted contents stay in Trash. Restoring an individual item also restores its required folder ancestors. Permanent folder deletion deletes its descendants; permanent client deletion unlinks surviving tasks, notes, and payments.
+
+Deadline reminders begin 14 days before the due date, refresh at seven days and daily through the final week, then show Today or Overdue. Read/dismiss state persists in the workspace. Completed and trashed tasks are excluded. Desktop notifications require the application to be open and browser permission; there is no background push service.
+
+### Database rollout
+
+For an existing installation, apply `supabase/organization.sql` in the Supabase SQL editor. It adds only a validation trigger to the existing workspace table: folder depth, unique IDs, direct references, and an old-client write guard. It does not change authentication, ownership, RLS, or copy user data. The complete `supabase/schema.sql` includes the same migration for fresh installations.
+
+Local verification uses `node --test tests/*.test.js`, including real PostgreSQL semantics through PGlite, revision conflicts, anonymous access denial, and two-user RLS isolation. `tests/organization-browser.cjs` exercises organization CRUD, cloud-adapter save/reload, reminders, trash/restore, permanent-deletion confirmation, and desktop/mobile layout against `tests/mock-cloud.cjs`. Run it against a dev server on port 5174 configured with the test Supabase URL in that mock. These tests do not claim verification against the live Supabase project.

@@ -1,3 +1,4 @@
+import {migrateOrganization} from './organize.js';
 export const id = () => crypto.randomUUID();
 export function dayKey(value = new Date()) { const d = new Date(value); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 export function shiftDay(key, days) { const d=new Date(key+'T12:00:00'); d.setDate(d.getDate()+days); return dayKey(d); }
@@ -11,15 +12,15 @@ export function normalize(raw) {
  const v={name:'Student',photo:'',theme:'system',accent:'#8b3f2f',timeZone:'',tasks:[],categories:['School','Work','Freelance','Personal'],projects:[],clients:[],payments:[],accounts:[],transactions:[],utang:[],sessions:[],notes:[],timer:null,notificationsEnabled:false,dismissed:[],...raw};
  for(const k of ['tasks','categories','projects','clients','payments','accounts','transactions','utang','sessions','notes','dismissed']) if(!Array.isArray(v[k]))v[k]=[];
  if(!v.categories.length)v.categories=['Personal'];
- v.tasks=v.tasks.map(t=>({...t,project:t.project||'',recurrence:t.recurrence||'none'}));
+ v.tasks=v.tasks.map(t=>({...t,recurrence:t.recurrence||'none'}));
  if(!raw?.schemaVersion){
   const titles=[...new Set(v.tasks.map(t=>t.project).filter(Boolean))];
   titles.forEach(title=>{if(!v.projects.some(p=>p.title===title))v.projects.push({id:id(),title,clientId:'',status:'In progress',category:v.tasks.find(t=>t.project===title).category,description:''});});
-  v.tasks=v.tasks.map(t=>({...t,projectId:v.projects.find(p=>p.title===t.project)?.id||''}));
+  v.tasks=v.tasks.map(t=>({...t,projectId:t.projectId||v.projects.find(p=>p.title===t.project)?.id||''}));
  }
  v.clients=v.clients.map(c=>({contactPerson:'',phone:'',type:'',email:'',notes:'',...c}));
  v.projects=v.projects.map(p=>({startDate:'',deadline:'',links:{},...p,status:({'Not started':'Not Started','In progress':'In Progress','On hold':'On Hold'})[p.status]||p.status||'Not Started'}));
- return {...v,schemaVersion:6};
+ return migrateOrganization({...v,folders:Array.isArray(v.folders)?v.folders:[],readNotifications:Array.isArray(v.readNotifications)?v.readNotifications:[],schemaVersion:7});
 }
 
 export function normalizeSubtasks(subtasks) {
@@ -72,4 +73,11 @@ export function stopTimer(data, now=Date.now(), finished=false) {
 export function income(payments){return payments.reduce((a,p)=>{const amount=Number(p.amount)||0;a.billed+=amount;a[p.paid?'paid':'unpaid']+=amount;return a;},{billed:0,paid:0,unpaid:0});}
 export const money=n=>new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(n);
 export const duration=s=>`${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`;
-export function notices(data){const today=dayKey();return data.tasks.filter(t=>t.progress<100&&t.due&&t.due<=today).map(t=>({id:`due:${t.id}:${t.due}`,title:t.title,detail:t.due<today?`Overdue · ${t.due}`:'Due today',task:t})).concat(data.sessions.filter(s=>s.kind==='focus'&&s.finished).map(s=>({id:`focus:${s.id}`,title:'Focus session complete',detail:`${s.label} · ${Math.round(s.seconds/60)} minutes` }))).filter(n=>!data.dismissed.includes(n.id));}
+export function notices(data,now=new Date()){
+ const today=dayKey(now), monday=weekStart(now),weekEnd=shiftDay(monday,6),nextEnd=shiftDay(monday,13);
+ return data.tasks.filter(t=>!t.deletedAt&&t.progress<100&&t.due&&t.due<=shiftDay(today,14)).map(t=>{
+ const days=Math.round((Date.parse(t.due+'T12:00:00Z')-Date.parse(today+'T12:00:00Z'))/86400000);
+ const stage=days>7?'14':days>0?String(days):days===0?'today':'overdue';
+ return {id:`due:${t.id}:${t.due}:${stage}`,title:t.title,detail:days<0?`Overdue · ${t.due}`:days===0?'Due today':`Due in ${days} day${days===1?'':'s'} · ${t.due}`,group:days<0?'Overdue':days===0?'Today':t.due<=weekEnd?'This Week':t.due<=nextEnd?'Next Week':'Later',task:t};
+ }).concat(data.sessions.filter(s=>s.kind==='focus'&&s.finished).map(s=>({id:`focus:${s.id}`,title:'Focus session complete',detail:`${s.label} · ${Math.round(s.seconds/60)} minutes`,group:'Today'}))).filter(n=>!data.dismissed.includes(n.id));
+}

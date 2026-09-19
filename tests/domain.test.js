@@ -18,7 +18,7 @@ test('completing a recurring task creates one successor, reopening cannot duplic
 });
 test('migration retains profile and connects existing project labels',()=>{
  const data=normalize({name:'Kaycee',accent:'#112233',tasks:[{id:'1',title:'A',project:'School project',progress:50,category:'School'}]});
- assert.equal(data.name,'Kaycee');assert.equal(data.accent,'#112233');assert.equal(data.projects.length,1);assert.equal(data.tasks[0].projectId,data.projects[0].id);
+ assert.equal(data.name,'Kaycee');assert.equal(data.accent,'#112233');assert.equal(data.folders.length,1);assert.equal(data.tasks[0].folderId,data.folders[0].id);
  assert.deepEqual(normalize(data),data);
 });
 test('weekly summaries count actual completion timestamps and local-date streaks',()=>{
