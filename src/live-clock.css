@@ -18,3 +18,5 @@
   .live-clock-time { font-size:11px; }
   .live-clock-zone { display:none; }
 }
+
+.header-theme-toggle { flex-shrink:0; color:var(--text); }
