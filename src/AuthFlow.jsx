@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { ArrowRight, LoaderCircle } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 import { supabase } from './supabase';
 
 const tagline = "Your Life Gets Chaotic. Your Tasks Don't Have To Be.";
 
 function ThemeLogo({className}) {
- return <><img src="/Black_Logo.png" alt="KARIBOK" className={`${className} auth-logo-light`}/><img src="/White_Logo.png" alt="KARIBOK" className={`${className} auth-logo-dark`}/></>;
+ return <img src="/karibok-wordmark-white.png" alt="karibok" className={className}/>;
 }
 
 export function SplashScreen() {
@@ -50,18 +50,9 @@ export function AuthScreen({ sessionError, onRetry }) {
   }
 
   return <main className="auth-screen">
-    <section className="auth-brand-panel" aria-label="Welcome to KARIBOK">
-      <ThemeLogo className="auth-logo" />
-      <div className="auth-brand-copy">
-        <div className="eyebrow">STUDY · WORK · HUSTLE</div>
-        <h1>{tagline}</h1>
-        <p>A little structure. A little breathing room.<br />One task at a time.</p>
-      </div>
-      <p className="auth-motto">Isa-isa lang, uusad din.</p>
-    </section>
     <section className="auth-form-panel" aria-labelledby="auth-title">
       <div className="auth-card">
-        <div className="eyebrow">YOUR PERSONAL WORKSPACE</div>
+        <ThemeLogo className="auth-logo" />
         <h2 id="auth-title">{mode === 'login' ? 'Welcome back.' : 'Make room for progress.'}</h2>
         <p className="auth-description">{mode === 'login' ? 'Sign in and pick up where you left off.' : 'Create an account to start organizing your day.'}</p>
         <div className="auth-mode" aria-label="Account options">
@@ -80,7 +71,7 @@ export function AuthScreen({ sessionError, onRetry }) {
           <input id="auth-password" type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={mode === 'signup' ? 8 : undefined} required value={password} onChange={event => setPassword(event.target.value)} placeholder={mode === 'signup' ? 'At least 8 characters' : 'Enter your password'} disabled={busy || !supabase} />
           {feedback && <p className={`auth-feedback ${feedback.error ? 'auth-error' : ''}`} role={feedback.error ? 'alert' : 'status'}>{feedback.text}</p>}
           <button className="primary auth-submit" type="submit" disabled={busy || !supabase}>
-            {busy ? <><LoaderCircle className="loading-spin" size={17} /> Please wait…</> : <>{mode === 'login' ? 'Sign in' : 'Create an account'} <ArrowRight size={17} /></>}
+            {busy ? <><LoaderCircle className="loading-spin" size={17} /> Please wait…</> : mode === 'login' ? 'Sign in' : 'Create an account'}
           </button>
         </form>
         <p className="auth-footnote">Your tasks, projects, and progress. All in one place.</p>
@@ -93,12 +84,14 @@ export function WorkspaceLoading({ workspace }) {
   const [error, setError] = useState('');
   const failed = workspace.status.startsWith('Could not');
   return <main className="workspace-loading">
+    <div className="splash-content">
     <ThemeLogo className="splash-logo" />
     <h1>{workspace.user ? 'Opening your workspace…' : 'Checking your session…'}</h1>
     <p role="status">{workspace.status}</p>
-    {!failed && <LoaderCircle className="loading-spin" size={22} aria-hidden="true" />}
+    {!failed && <div className="splash-loader" aria-hidden="true"><span /></div>}
     {failed && <div className="flex gap-3 flex-wrap justify-center"><button className="primary" onClick={() => workspace.retry().catch(e => setError(e.message))}>Retry connection</button><button className="secondary" onClick={() => workspace.signOut().catch(e => setError(e.message))}>Sign out</button></div>}
     {error && <p role="alert">{error}</p>}
+    </div>
   </main>;
 }
 

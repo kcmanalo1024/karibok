@@ -24,6 +24,7 @@ import './icons.css';
 import SubtaskModal from './SubtaskModal';
 import './subtasks.css';
 import NotificationPanel from './NotificationPanel';
+import './auth.css';
 const dateKey = (offset=0) => { const d=new Date(); d.setDate(d.getDate()+offset); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const zonedDateKey = (date,tz) => { const p=new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date).reduce((a,x)=>(a[x.type]=x.value,a),{}); return `${p.year}-${p.month}-${p.day}`; };
 const seed = [
