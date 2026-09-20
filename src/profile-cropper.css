@@ -1,0 +1,16 @@
+.profile-cropper{width:min(540px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:24px}
+.profile-cropper #crop-help{font-size:13px;line-height:1.6;margin-bottom:20px}
+.crop-layout{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:24px;align-items:center}
+.crop-stage{aspect-ratio:1;position:relative;overflow:hidden;background:var(--surface2);touch-action:none;cursor:grab;border-radius:8px;user-select:none}
+.crop-stage:active{cursor:grabbing}
+.crop-stage:focus-visible{outline:2px solid var(--accent-ink);outline-offset:3px}
+.crop-stage img{position:absolute;max-width:none;pointer-events:none;object-fit:fill}
+.crop-circle{position:absolute;inset:0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 200px #0009;pointer-events:none}
+.crop-preview{display:flex;align-items:center;flex-direction:column;gap:10px;font-size:12px}
+.crop-preview canvas{width:80px;height:80px;border-radius:50%;background:var(--surface2)}
+.profile-cropper .field input{width:100%;min-height:28px}
+.profile-cropper .modal-actions{margin-top:24px;gap:8px}
+.crop-reset{margin-right:auto}
+.crop-error{font-size:13px;line-height:1.6;color:var(--text);border:1px solid #c25742;padding:12px;border-radius:8px;margin:12px 0}
+.profile-cropper button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:420px){.profile-cropper{padding:18px}.crop-layout{grid-template-columns:minmax(0,1fr);gap:16px}.crop-preview{flex-direction:row;justify-content:center}.crop-preview canvas{width:56px;height:56px}}
